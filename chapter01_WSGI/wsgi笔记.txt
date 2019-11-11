@@ -1,0 +1,119 @@
+# wsgiref
+
+*  wsgiref 是WSGI规范的实现
+* 实现了Web Server
+* 实现了WSGI Application
+
+# wsgiref简单demo
+
+```python
+# -*- coding: utf-8 -*-#
+from wsgiref.simple_server import make_server
+
+
+def app(environ, start_response):
+    print(environ)
+    start_response("200 OK", [('Content-Type', 'text/plain; charset=utf-8')])
+    return ["Hello World".encode("utf-8")]
+
+
+class ClassApp(object):
+    def __init__(self, environ, start_response):
+        self.environ = environ
+        self.start_response = start_response
+
+    def __iter__(self):
+        self.start_response("200 OK", [('Content-Type', 'text/plain; charset=utf-8')])
+        yield "Hello World".encode("utf-8")
+
+
+if __name__ == '__main__':
+    """
+    app: 应用程序必须是可调用对象(实现了__call__)， 返回值必须是一个可迭代对象(实现了__iter__)
+    """
+    httpd = make_server("127.0.0.1", 8000, app=app)
+    print("http://{}:{}".format("127.0.0.1", 8000))
+    httpd.serve_forever()
+
+```
+
+# 过程分析
+
+## make_server
+
+```python
+def make_server(host, port, app, 
+                server_class=WSGIServer, handler_class=WSGIRequestHandler):
+    """Create a new WSGI server listening on `host` and `port` for `app`"""
+    server = server_class((host, port), handler_class)
+    server.set_app(app)
+    return server
+
+```
+
+​     在make_server中，使用的WSGI服务器实现类是WSGIServer
+
+​	(host, port): 设置主机名和端口号
+
+​	handler_class:用于处理请求的类
+
+​	app: 我们自己实现的app，处理一些逻辑，并产生响应内容
+
+### server_class=WSGIServer
+
+ 默认的 server_class 是 **WSGIServer**，它是**HTTPServer**的子类，后者又是**TCPServer**的子类，TCPServer又是**BaseServer**的子类 ，在server的示例过程中，TCPServer对socket进行了初始化，并对socket进行bind和listen
+
+![image-20191110155005254](C:\Users\kaifa\AppData\Roaming\Typora\typora-user-images\image-20191110155005254.png)
+
+### server.set_app(app)
+
+​	app会在 WSGIRequestHandler 的handler中被取出来，然后交给handler的run函数运行，至此Server运行成功。
+
+### httpd.serve_forever()
+
+​	在BaseServer中的finish_request中实例化了RequestHandlerClass,
+
+![image-20191111174156399](C:\Users\kaifa\AppData\Roaming\Typora\typora-user-images\image-20191111174156399.png)
+
+在RequestHandlerClass的__init__()中， 调用了self.setup() 、 self.handler()、self.finish()
+
+![image-20191111174330738](C:\Users\kaifa\AppData\Roaming\Typora\typora-user-images\image-20191111174330738.png)
+
+
+
+###  WSGIRequestHandler 
+
+
+
+​	在WSGIRequestHandler的handle中，实例化了一个ServerHandler
+
+![image-20191111175139638](C:\Users\kaifa\AppData\Roaming\Typora\typora-user-images\image-20191111175139638.png)
+
+设置好环境变量后，调用我们提供的app，并会通过finishi_response响应给客户端
+
+![image-20191111175720469](C:\Users\kaifa\AppData\Roaming\Typora\typora-user-images\image-20191111175720469.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

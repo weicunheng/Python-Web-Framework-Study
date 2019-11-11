@@ -1,0 +1,10 @@
+源码分析:
+    在make_server中，使用的WSGI服务器实现类是WSGIServer
+1. WSGIServer : BaseHTTPServer that implements the Python WSGI protocol
+2. HTTPServer
+3. TCPServer
+4. BaseServer
+
+
+
+
